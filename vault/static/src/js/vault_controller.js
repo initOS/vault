@@ -4,8 +4,8 @@
 odoo.define("vault.controller", function (require) {
   "use strict";
 
-  var core = require('web.core');
-  var Dialog = require('web.Dialog');
+  var core = require("web.core");
+  var Dialog = require("web.Dialog");
   var FormController = require("web.FormController");
   var Importer = require("vault.import");
   var utils = require("vault.utils");
@@ -23,14 +23,13 @@ odoo.define("vault.controller", function (require) {
      * @param {Object} options
      */
     _applyChangesSendWizard: async function (record, changes, options) {
-      if (!changes.user_id || !record.data.public)
-        return;
+      if (!changes.user_id || !record.data.public) return;
 
       const key = await vault.unwrap(record.data.key);
       await this._applyChanges(
         record.id,
-        {key_user: await vault.wrap_with(key, record.data.public)},
-        options,
+        { key_user: await vault.wrap_with(key, record.data.public) },
+        options
       );
     },
 
@@ -43,17 +42,26 @@ odoo.define("vault.controller", function (require) {
      * @param {Object} options
      */
     _applyChangesStoreWizard: async function (record, changes, options) {
-      if (!changes.entry_id || !record.data.master_key || !record.data.iv || !record.data.secret_temporary)
+      if (
+        !changes.entry_id ||
+        !record.data.master_key ||
+        !record.data.iv ||
+        !record.data.secret_temporary
+      )
         return;
 
       const key = await vault.unwrap(record.data.key);
-      const secret = await utils.sym_decrypt(key, record.data.secret_temporary, record.data.iv);
+      const secret = await utils.sym_decrypt(
+        key,
+        record.data.secret_temporary,
+        record.data.iv
+      );
       const master_key = await vault.unwrap(record.data.master_key);
 
       await this._applyChanges(
         record.id,
-        {secret: await utils.sym_encrypt(master_key, secret, record.data.iv)},
-        options,
+        { secret: await utils.sym_encrypt(master_key, secret, record.data.iv) },
+        options
       );
     },
 
@@ -63,7 +71,7 @@ odoo.define("vault.controller", function (require) {
      * @private
      */
     _newVaultKeyPair: async function () {
-      const master_keys = await this._rpc({route: "/vault/rights/get"});
+      const master_keys = await this._rpc({ route: "/vault/rights/get" });
 
       // Get the current private key
       const private_key = await vault.get_private_key();
@@ -78,11 +86,14 @@ odoo.define("vault.controller", function (require) {
       for (const uuid in master_keys) {
         result[uuid] = await utils.wrap(
           await utils.unwrap(master_keys[uuid], private_key),
-          public_key,
+          public_key
         );
       }
 
-      await this._rpc({route: "/vault/rights/store", params: {keys: result}});
+      await this._rpc({
+        route: "/vault/rights/store",
+        params: { keys: result },
+      });
 
       await this.reload();
     },
@@ -99,7 +110,8 @@ odoo.define("vault.controller", function (require) {
 
       Dialog.confirm(
         self,
-        _t("Do you really want to create a new key pair and set it active?"), {
+        _t("Do you really want to create a new key pair and set it active?"),
+        {
           confirm_callback: function () {
             return self._newVaultKeyPair();
           },
@@ -115,11 +127,14 @@ odoo.define("vault.controller", function (require) {
     renderButtons: function () {
       this._super.apply(this, arguments);
 
-      if (this.modelName !== "res.users")
-        return;
+      if (this.modelName !== "res.users") return;
 
       if (this.$buttons)
-        this.$buttons.on("click", "[name='action_generate_key']", this._onGenerateKeys.bind(this));
+        this.$buttons.on(
+          "click",
+          "[name='action_generate_key']",
+          this._onGenerateKeys.bind(this)
+        );
     },
 
     /**
@@ -132,22 +147,30 @@ odoo.define("vault.controller", function (require) {
      * @param {Object} options
      */
     _changedVaultRightUser: async function (record, changes, options) {
-      if (!changes.data.user_id)
-        return;
+      if (!changes.data.user_id) return;
 
-      const params = {user_id: changes.data.user_id.id};
-      const user = await this._rpc({route: "/vault/public", params: params});
+      const params = { user_id: changes.data.user_id.id };
+      const user = await this._rpc({ route: "/vault/public", params: params });
 
       if (!user || !user.public_key)
         throw new TypeError("User has no public key");
 
       for (const right of record.data.right_ids.data) {
         if (right.id === changes.id) {
-          const key = await vault.share(record.data.master_key, user.public_key);
+          const key = await vault.share(
+            record.data.master_key,
+            user.public_key
+          );
           await this._applyChanges(
             record.id,
-            {right_ids: {operation: "UPDATE", id: right.id, data: {key: key}}},
-            options,
+            {
+              right_ids: {
+                operation: "UPDATE",
+                id: right.id,
+                data: { key: key },
+              },
+            },
+            options
           );
         }
       }
@@ -174,35 +197,61 @@ odoo.define("vault.controller", function (require) {
 
           await this._applyChanges(
             record.id,
-            {right_ids: {operation: "UPDATE", id: right.id, data: {key: key}}},
-            options,
+            {
+              right_ids: {
+                operation: "UPDATE",
+                id: right.id,
+                data: { key: key },
+              },
+            },
+            options
           );
         }
       }
 
       // Re-encrypt the fields
       for (const field of record.data.field_ids.data) {
-        const val = await utils.sym_decrypt(current_key, field.data.value, field.data.iv);
+        const val = await utils.sym_decrypt(
+          current_key,
+          field.data.value,
+          field.data.iv
+        );
         const iv = utils.generate_iv_base64();
         const encrypted = await utils.sym_encrypt(master_key, val, iv);
 
         await this._applyChanges(
           record.id,
-          {field_ids: {operation: "UPDATE", id: field.id, data: {value: encrypted, iv: iv}}},
-          options,
+          {
+            field_ids: {
+              operation: "UPDATE",
+              id: field.id,
+              data: { value: encrypted, iv: iv },
+            },
+          },
+          options
         );
       }
 
       // Re-encrypt the files
       for (const file of record.data.file_ids.data) {
-        const val = await utils.sym_decrypt(current_key, file.data.content, file.data.iv);
+        const val = await utils.sym_decrypt(
+          current_key,
+          file.data.content,
+          file.data.iv
+        );
         const iv = utils.generate_iv_base64();
         const encrypted = await utils.sym_encrypt(master_key, val, iv);
 
         await this._applyChanges(
           record.id,
-          {file_ids: {operation: "UPDATE", id: file.id, data: {content: encrypted, iv: iv}}},
-          options,
+          {
+            file_ids: {
+              operation: "UPDATE",
+              id: file.id,
+              data: { content: encrypted, iv: iv },
+            },
+          },
+          options
         );
       }
     },
@@ -219,7 +268,11 @@ odoo.define("vault.controller", function (require) {
     _applyChangesVault: async function (record, changes, options) {
       if (!record.data.master_key && !changes.master_key) {
         const master_key = await vault.wrap(await utils.generate_key());
-        await this._applyChanges(record.id, {master_key: master_key}, options);
+        await this._applyChanges(
+          record.id,
+          { master_key: master_key },
+          options
+        );
       }
 
       if (changes.right_ids && changes.right_ids.operation === "UPDATE")
@@ -230,7 +283,9 @@ odoo.define("vault.controller", function (require) {
 
         Dialog.confirm(
           self,
-          _t("This will re-encrypt everything in the vault. Do you want to proceed?"),
+          _t(
+            "This will re-encrypt everything in the vault. Do you want to proceed?"
+          ),
           {
             confirm_callback: async function () {
               await this._deleteVaultRight(record, changes.right_ids, options);
@@ -249,8 +304,7 @@ odoo.define("vault.controller", function (require) {
      * @param {Object} options
      */
     _applyChangesImportWizard: async function (record, changes, options) {
-      if (!changes.content)
-        return;
+      if (!changes.content) return;
 
       // Try to import the file on the fly and store the compatible JSON in the
       // crypted_content field for the python backend
@@ -258,14 +312,14 @@ odoo.define("vault.controller", function (require) {
       const data = await importer.import(
         await vault.unwrap(record.data.master_key),
         record.data.name,
-        atob(changes.content),
+        atob(changes.content)
       );
 
       if (data)
         await this._applyChanges(
           record.id,
-          {crypted_content: JSON.stringify(data)},
-          options,
+          { crypted_content: JSON.stringify(data) },
+          options
         );
     },
 

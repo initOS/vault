@@ -31,7 +31,9 @@ class VaultInbox(models.Model):
         "to create new inboxes you should give them your inbox link from your key "
         "management.",
     )
-    user_id = fields.Many2one("res.users", "Vault", required=True)
+    user_id = fields.Many2one(
+        "res.users", "Vault", required=True, default=lambda self: self.env.user,
+    )
     name = fields.Char(required=True)
     secret = fields.Char(readonly=True)
     filename = fields.Char()

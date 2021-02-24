@@ -100,8 +100,7 @@ odoo.define("vault.fields", function (require) {
       this.decrypted = !this.decrypted;
       if (this.decrypted)
         this.decrypted_value = await this._decrypt(this.value);
-      else
-        this.decrypted_value = false;
+      else this.decrypted_value = false;
 
       this._render();
     },
@@ -257,7 +256,7 @@ odoo.define("vault.fields", function (require) {
      */
     _renderEdit: function () {
       if (this.field.size && this.field.size > 0)
-        this.$el.attr('maxlength', this.field.size);
+        this.$el.attr("maxlength", this.field.size);
       return this._super.apply(this, arguments);
     },
 
@@ -268,11 +267,13 @@ odoo.define("vault.fields", function (require) {
      * @param {String} value to render
      */
     _renderValue: function (value) {
-      this.$el.html(QWeb.render(this.template, {
-        widget: self,
-        value: value,
-        show: !this.decrypted,
-      }));
+      this.$el.html(
+        QWeb.render(this.template, {
+          widget: self,
+          value: value,
+          show: !this.decrypted,
+        })
+      );
     },
 
     /**
@@ -332,7 +333,10 @@ odoo.define("vault.fields", function (require) {
      */
     on_save_as: async function (ev) {
       if (!this.value) {
-        this.do_warn(_t("Save As..."), _t("The field is empty, there's nothing to save!"));
+        this.do_warn(
+          _t("Save As..."),
+          _t("The field is empty, there's nothing to save!")
+        );
         ev.stopPropagation();
       } else if (this.res_id) {
         ev.stopPropagation();
@@ -341,8 +345,7 @@ odoo.define("vault.fields", function (require) {
         const base64 = atob(await this._decrypt(this.value));
         const buffer = new ArrayBuffer(base64.length);
         const arr = new Uint8Array(buffer);
-        for (let i = 0; i < base64.length; i++)
-          arr[i] = base64.charCodeAt(i);
+        for (let i = 0; i < base64.length; i++) arr[i] = base64.charCodeAt(i);
 
         const blob = new Blob([arr]);
         download(blob, this.recordData[filename_fieldname] || "");
@@ -354,12 +357,11 @@ odoo.define("vault.fields", function (require) {
   var VaultExportFile = basic_fields.FieldBinaryFile.extend(VaultAbstract, {
     className: "o_vault",
     events: _.extend({}, basic_fields.AbstractFieldBinary.prototype.events, {
-      'click': function (event) {
-        if (this.mode === 'readonly' && this.value)
-          this.on_save_as(event);
+      click: function (event) {
+        if (this.mode === "readonly" && this.value) this.on_save_as(event);
       },
-      'click .o_input': function () {
-        this.$('.o_input_file').click();
+      "click .o_input": function () {
+        this.$(".o_input_file").click();
       },
     }),
 
@@ -382,13 +384,11 @@ odoo.define("vault.fields", function (require) {
      */
     _render: function () {
       if (this.value) {
-        this.$el.empty().append($("<span/>").addClass('fa fa-download'));
-        this.$el.css('cursor', 'pointer');
+        this.$el.empty().append($("<span/>").addClass("fa fa-download"));
+        this.$el.css("cursor", "pointer");
 
-        if (this.filename_value)
-          this.$el.append(" " + this.filename_value);
-      } else
-        this.$el.css("cursor", "not-allowed");
+        if (this.filename_value) this.$el.append(" " + this.filename_value);
+      } else this.$el.css("cursor", "not-allowed");
     },
 
     /**
@@ -402,20 +402,24 @@ odoo.define("vault.fields", function (require) {
         ev.stopPropagation();
 
         const exporter = new Exporter();
-        const content = JSON.stringify(await exporter.export(
-          await this._getMasterKey(),
-          this.filename_value,
-          this.value
-        ));
+        const content = JSON.stringify(
+          await exporter.export(
+            await this._getMasterKey(),
+            this.filename_value,
+            this.value
+          )
+        );
         const buffer = new ArrayBuffer(content.length);
         const arr = new Uint8Array(buffer);
-        for (let i = 0; i < content.length; i++)
-          arr[i] = content.charCodeAt(i);
+        for (let i = 0; i < content.length; i++) arr[i] = content.charCodeAt(i);
 
         const blob = new Blob([arr]);
         download(blob, this.filename_value || "");
       } else {
-        this.do_warn(_t("Save As..."), _t("The field is empty, there's nothing to save!"));
+        this.do_warn(
+          _t("Save As..."),
+          _t("The field is empty, there's nothing to save!")
+        );
         ev.stopPropagation();
       }
     },
@@ -454,8 +458,7 @@ odoo.define("vault.fields", function (require) {
       const iv = this.recordData[this.field_iv];
       const wrapped_key = this.recordData[this.field_key];
 
-      if (!iv || !wrapped_key)
-        return false;
+      if (!iv || !wrapped_key) return false;
 
       const key = await vault.unwrap(wrapped_key);
       return await utils.sym_decrypt(key, data, iv);
@@ -494,16 +497,16 @@ odoo.define("vault.fields", function (require) {
     _renderReadonly: function () {
       this.do_toggle(Boolean(this.value));
       if (this.value) {
-        this.$el.html(QWeb.render(this.template, {
-          widget: this,
-          filename: this.filename_value,
-        }));
+        this.$el.html(
+          QWeb.render(this.template, {
+            widget: this,
+            filename: this.filename_value,
+          })
+        );
 
         const $el = this.$(".link");
-        if (this.recordData.id)
-          $el.css('cursor', 'pointer');
-        else
-          $el.css('cursor', 'not-allowed');
+        if (this.recordData.id) $el.css("cursor", "pointer");
+        else $el.css("cursor", "not-allowed");
       }
     },
 
@@ -518,8 +521,7 @@ odoo.define("vault.fields", function (require) {
       const iv = this.recordData[this.field_iv];
       const wrapped_key = this.recordData[this.field_key];
 
-      if (!iv || !wrapped_key)
-        return false;
+      if (!iv || !wrapped_key) return false;
 
       const key = await vault.unwrap(wrapped_key);
       return btoa(await utils.sym_decrypt(key, data, iv));

@@ -12,28 +12,29 @@ odoo.define("vault.inbox", function (require) {
   var iv = false;
 
   const fields = [
-    "key", "iv", "public",
-    "encrypted", "secret",
-    "encrypted_file", "filename", "secret_file",
+    "key",
+    "iv",
+    "public",
+    "encrypted",
+    "secret",
+    "encrypted_file",
+    "filename",
+    "secret_file",
   ];
 
   function toggle_required(element, value) {
-    if (value)
-      element.setAttribute("required", "required");
-    else
-      element.removeAttribute("required");
+    if (value) element.setAttribute("required", "required");
+    else element.removeAttribute("required");
   }
 
   // Encrypt the value and store it in the right input field
-  async function encrypt_and_store (value, target) {
+  async function encrypt_and_store(value, target) {
     // Find all the possible elements which are needed
     for (const id of fields)
-      if (!data[id])
-        data[id] = document.getElementById(id);
+      if (!data[id]) data[id] = document.getElementById(id);
 
     // We expect a public key here otherwise we can't procceed
-    if (!data.public.value)
-      return;
+    if (!data.public.value) return;
 
     const public_key = await utils.load_public_key(data.public.value);
 
@@ -56,22 +57,19 @@ odoo.define("vault.inbox", function (require) {
   }
 
   document.getElementById("secret").onchange = async function () {
-    if (!this.value)
-      return;
+    if (!this.value) return;
 
     const required = await encrypt_and_store(this.value, "encrypted");
     toggle_required(data.secret, required);
     toggle_required(data.secret_file, !required);
   };
 
-   document.getElementById("secret_file").onchange = async function () {
-    if (!this.files.length)
-      return;
+  document.getElementById("secret_file").onchange = async function () {
+    if (!this.files.length) return;
 
     const file = this.files[0];
     const value = await file.text();
-    if (!value)
-      return;
+    if (!value) return;
 
     const required = await encrypt_and_store(value, "encrypted_file");
     toggle_required(data.secret, !required);

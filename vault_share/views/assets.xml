@@ -9,8 +9,10 @@
         </xpath>
     </template>
 
-    <template id="share_frontend">
-        <script type="text/javascript" src="/vault/static/src/js/vault_utils.js"/>
-        <script type="text/javascript" src="/vault_share/static/src/js/vault_share.js"/>
+    <template id="share_frontend" inherit_id="web.assets_frontend">
+        <xpath expr="." position="inside">
+            <script type="text/javascript" src="/vault/static/src/js/vault_utils.js"/>
+            <script type="text/javascript" src="/vault_share/static/src/js/vault_share.js"/>
+        </xpath>
     </template>
 </odoo>

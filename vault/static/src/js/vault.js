@@ -16,8 +16,12 @@ odoo.define("vault", function (require) {
   // Database name on the browser
   const Database = "vault";
 
-  const indexedDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB ||
-    window.msIndexedDB || window.shimIndexedDB;
+  const indexedDB =
+    window.indexedDB ||
+    window.mozIndexedDB ||
+    window.webkitIndexedDB ||
+    window.msIndexedDB ||
+    window.shimIndexedDB;
 
   // Expiration time of the vault store entries
   const Expiration = 15 * 60 * 1000;
@@ -28,13 +32,13 @@ odoo.define("vault", function (require) {
    * @param {Boolean} confirm
    * @returns password
    */
-  async function askpassword(confirm=false) {
+  async function askpassword(confirm = false) {
     const askpass = await utils.askpass(
       _t("Please enter the password for your private key"),
-      {confirm: confirm},
+      { confirm: confirm }
     );
 
-    let password = (askpass.password || '');
+    let password = askpass.password || "";
     if (askpass.keyfile)
       password += await utils.digest(utils.toBinary(askpass.keyfile));
 
@@ -53,10 +57,8 @@ odoo.define("vault", function (require) {
       var self = this;
 
       function waitAndCheck() {
-        if (odoo.isReady)
-          self._initialize_keys();
-        else
-          setTimeout(waitAndCheck, 500);
+        if (odoo.isReady) self._initialize_keys();
+        else setTimeout(waitAndCheck, 500);
       }
 
       setTimeout(waitAndCheck, 500);
@@ -81,7 +83,7 @@ odoo.define("vault", function (require) {
       this.keys = await utils.generate_key_pair();
       this.time = new Date();
 
-      if (!await this._export_to_database())
+      if (!(await this._export_to_database()))
         throw Error(_t("Failed to export the keys to the database"));
 
       await this._export_to_store();
@@ -99,8 +101,7 @@ odoo.define("vault", function (require) {
       this.uuid = await this._check_database();
       if (this.uuid) {
         // If the object store has the keys it's done
-        if (await this._import_from_store())
-          return;
+        if (await this._import_from_store()) return;
 
         // Otherwise an import from the database and export to the object store
         // is needed
@@ -126,8 +127,7 @@ odoo.define("vault", function (require) {
     _ensure_keys: async function () {
       // Check if the keys expired
       const now = new Date();
-      if (now - this.time <= Expiration)
-        return;
+      if (now - this.time <= Expiration) return;
 
       // Keys expired means that we have to get them again
       this.keys = this.time = null;
@@ -137,11 +137,11 @@ odoo.define("vault", function (require) {
       store.clear();
 
       // Import the keys from the database
-      if (!await this._import_from_database())
+      if (!(await this._import_from_database()))
         throw Error(_t("Failed to import keys from database"));
 
       // Store the imported keys in the object store for the next calls
-      if (!await this._export_to_store())
+      if (!(await this._export_to_store()))
         throw Error(_t("Failed to export keys to object store"));
 
       return;
@@ -178,7 +178,7 @@ odoo.define("vault", function (require) {
         var open = indexedDB.open(Database, 1);
         open.onupgradeneeded = function () {
           var db = open.result;
-          db.createObjectStore(Database, {keyPath: "id"});
+          db.createObjectStore(Database, { keyPath: "id" });
         };
 
         open.onerror = function (event) {
@@ -208,14 +208,14 @@ odoo.define("vault", function (require) {
     _get_keys: async function (uuid) {
       var self = this;
       return new Promise((resolve, reject) => {
-        self._get_object_store().then(store => {
+        self._get_object_store().then((store) => {
           const request = store.get(uuid);
           request.onerror = function (event) {
             reject(`error opening database ${event.target.errorCode}`);
           };
           request.onsuccess = function () {
             resolve(request.result);
-          }
+          };
         });
       });
     },
@@ -227,8 +227,7 @@ odoo.define("vault", function (require) {
      */
     _check_database: async function () {
       const params = await this.rpc("/vault/keys/get");
-      if (Object.keys(params).length && params.uuid)
-        return params.uuid;
+      if (Object.keys(params).length && params.uuid) return params.uuid;
       return false;
     },
 
@@ -240,8 +239,7 @@ odoo.define("vault", function (require) {
      * @returns if the keys are in the object store
      */
     _check_store: async function (uuid) {
-      if (!uuid)
-        return false;
+      if (!uuid) return false;
 
       const result = await this._get_keys(uuid);
       return Boolean(result && result.keys);
@@ -270,7 +268,7 @@ odoo.define("vault", function (require) {
      * @returns true
      */
     _export_to_store: async function () {
-      const keys = {id: this.uuid, keys: this.keys, time: this.time};
+      const keys = { id: this.uuid, keys: this.keys, time: this.time };
       const store = await this._get_object_store();
       store.put(keys);
       return true;
@@ -292,16 +290,22 @@ odoo.define("vault", function (require) {
 
       // Request the password from the user and derive the user key
       const pass = await utils.derive_key(
-        await askpassword(true), this.salt, this.iterations,
+        await askpassword(true),
+        this.salt,
+        this.iterations
       );
 
       // Export the private key wrapped with the master key
       const private_key = await utils.export_private_key(
-        await this.get_private_key(), pass, this.iv,
+        await this.get_private_key(),
+        pass,
+        this.iv
       );
 
       // Export the public key
-      const public_key = await utils.export_public_key(await this.get_public_key());
+      const public_key = await utils.export_public_key(
+        await this.get_public_key()
+      );
 
       const params = {
         public: public_key,
@@ -336,12 +340,18 @@ odoo.define("vault", function (require) {
 
         // Request the password from the user and derive the user key
         const pass = await utils.derive_key(
-          await askpassword(), this.salt, this.iterations,
+          await askpassword(),
+          this.salt,
+          this.iterations
         );
 
         this.keys = {
           publicKey: await utils.load_public_key(params.public),
-          privateKey: await utils.load_private_key(params.private, pass, params.iv),
+          privateKey: await utils.load_private_key(
+            params.private,
+            pass,
+            params.iv
+          ),
         };
 
         this.time = new Date();

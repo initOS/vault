@@ -20,8 +20,10 @@
         </xpath>
     </template>
 
-    <template id="inbox_frontend">
-        <script type="text/javascript" src="/vault/static/src/js/vault_utils.js"/>
-        <script type="text/javascript" src="/vault/static/src/js/vault_inbox.js"/>
+    <template id="inbox_frontend" inherit_id="web.assets_frontend">
+        <xpath expr="." position="inside">
+            <script type="text/javascript" src="/vault/static/src/js/vault_utils.js"/>
+            <script type="text/javascript" src="/vault/static/src/js/vault_inbox.js"/>
+        </xpath>
     </template>
 </odoo>

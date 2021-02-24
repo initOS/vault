@@ -6,7 +6,7 @@
 odoo.define("vault.import", function (require) {
   "use strict";
 
-  var core = require('web.core');
+  var core = require("web.core");
   var framework = require("web.framework");
   var mixins = require("web.mixins");
   var utils = require("vault.utils");
@@ -14,12 +14,15 @@ odoo.define("vault.import", function (require) {
   var _t = core._t;
 
   async function encrypted_field(master_key, name, value) {
-    if (!value)
-      return null;
+    if (!value) return null;
 
     const iv = utils.generate_iv_base64();
-    return {name: name, iv: iv, value: await utils.sym_encrypt(master_key, value, iv)};
-  };
+    return {
+      name: name,
+      iv: iv,
+      value: await utils.sym_encrypt(master_key, value, iv),
+    };
+  }
 
   // This class handles the import from different formats by returning
   // an importable JSON formatted data which will be handled by the python
@@ -47,7 +50,11 @@ odoo.define("vault.import", function (require) {
     _import_json_entry: async function (master_key, node) {
       for (const field of node.fields || []) {
         field.iv = utils.generate_iv_base64();
-        field.value = await utils.sym_encrypt(master_key, field.value, field.iv);
+        field.value = await utils.sym_encrypt(
+          master_key,
+          field.value,
+          field.iv
+        );
       }
 
       for (const file of node.files || []) {
@@ -69,8 +76,7 @@ odoo.define("vault.import", function (require) {
      * @returns the encrypted entry for the database
      */
     _import_json_data: async function (master_key, data) {
-      for (const node of data)
-        await this._import_json_entry(master_key, node);
+      for (const node of data) await this._import_json_entry(master_key, node);
       return data;
     },
 
@@ -84,15 +90,17 @@ odoo.define("vault.import", function (require) {
      * @returns the encrypted entry for the database
      */
     _import_encrypted_json: async function (master_key, content) {
-      const askpass = await utils.askpass(_t("Please enter the password for the database"));
-      let password = (askpass.password || '');
+      const askpass = await utils.askpass(
+        _t("Please enter the password for the database")
+      );
+      let password = askpass.password || "";
       if (askpass.keyfile)
         password += await utils.digest(utils.toBinary(askpass.keyfile));
 
       const key = await utils.derive_key(
         password,
         utils.fromBase64(content.salt),
-        content.iterations,
+        content.iterations
       );
       const result = await utils.sym_decrypt(key, content.data, content.iv);
       return await this._import_json_data(master_key, JSON.parse(result));
@@ -132,8 +140,7 @@ odoo.define("vault.import", function (require) {
      */
     _import_kdbx_entry: async function (master_key, entry) {
       let pass = entry.fields.Password;
-      if (pass)
-        pass = pass.getText();
+      if (pass) pass = pass.getText();
 
       const res = {
         uuid: entry.uuid && entry.uuid.id,
@@ -148,11 +155,13 @@ odoo.define("vault.import", function (require) {
       };
 
       for (const name in entry.binaries)
-        res.files.push(await encrypted_field(
-          master_key,
-          name,
-          utils.toBase64(entry.binaries[name].value),
-        ));
+        res.files.push(
+          await encrypted_field(
+            master_key,
+            name,
+            utils.toBase64(entry.binaries[name].value)
+          )
+        );
 
       return res;
     },
@@ -193,12 +202,16 @@ odoo.define("vault.import", function (require) {
      */
     _import_kdbx: async function (master_key, data) {
       // Get the credentials of the keepass database
-      const askpass = await utils.askpass(_t("Please enter the password for the keepass database"));
+      const askpass = await utils.askpass(
+        _t("Please enter the password for the keepass database")
+      );
 
       // TODO: challenge-response
       const credentials = new kdbxweb.Credentials(
-        askpass.password && kdbxweb.ProtectedValue.fromString(askpass.password) || null,
-        askpass.keyfile || null,
+        (askpass.password &&
+          kdbxweb.ProtectedValue.fromString(askpass.password)) ||
+          null,
+        askpass.keyfile || null
       );
 
       // Convert the data to an ArrayBuffer

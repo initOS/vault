@@ -41,8 +41,7 @@ odoo.define("vault.utils", function (require) {
    * @returns the data converted to a string
    */
   function toBinary(buffer) {
-    if (!buffer)
-      return '';
+    if (!buffer) return "";
 
     const chars = Array.from(new Uint8Array(buffer)).map(function (b) {
       return String.fromCharCode(b);
@@ -59,8 +58,7 @@ odoo.define("vault.utils", function (require) {
   function fromBinary(binary) {
     const len = binary.length;
     const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++)
-      bytes[i] = binary.charCodeAt(i);
+    for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
     return bytes.buffer;
   }
 
@@ -71,8 +69,7 @@ odoo.define("vault.utils", function (require) {
    * @returns Base64 string
    */
   function toBase64(buffer) {
-    if (!buffer)
-      return '';
+    if (!buffer) return "";
 
     const chars = Array.from(new Uint8Array(buffer)).map(function (b) {
       return String.fromCharCode(b);
@@ -95,8 +92,7 @@ odoo.define("vault.utils", function (require) {
     const binary_string = atob(base64);
     const len = binary_string.length;
     const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++)
-      bytes[i] = binary_string.charCodeAt(i);
+    for (let i = 0; i < len; i++) bytes[i] = binary_string.charCodeAt(i);
     return bytes.buffer;
   }
 
@@ -132,7 +128,7 @@ odoo.define("vault.utils", function (require) {
     let result = "";
     const len = characters.length;
     for (const k of generate_bytes(length))
-      result += characters[Math.floor(len * k / 256)];
+      result += characters[Math.floor((len * k) / 256)];
     return result;
   }
 
@@ -151,11 +147,12 @@ odoo.define("vault.utils", function (require) {
    * @returns asymmetric key
    */
   async function generate_key_pair() {
-    return await CryptoAPI.generateKey(
-      Asymmetric,
-      true,
-      ["wrapKey", "unwrapKey", "decrypt", "encrypt"],
-    );
+    return await CryptoAPI.generateKey(Asymmetric, true, [
+      "wrapKey",
+      "unwrapKey",
+      "decrypt",
+      "encrypt",
+    ]);
   }
 
   /**
@@ -176,52 +173,56 @@ odoo.define("vault.utils", function (require) {
    * @param {Object} options
    * @returns promise
    */
-  function askpass(title, options={}) {
+  function askpass(title, options = {}) {
     var self = this;
 
-    if (options.password === undefined)
-      options.password = true;
-    if (options.keyfile === undefined)
-      options.keyfile = true;
+    if (options.password === undefined) options.password = true;
+    if (options.keyfile === undefined) options.keyfile = true;
 
     return new Promise((resolve, reject) => {
       var dialog = new Dialog(self, {
         title: title,
         $content: $(qweb.render("vault.askpass", options)),
         buttons: [
-          {text: _t("Enter"), classes: "btn-primary", click: async function () {
-            const password = this.$("#password").val();
-            const keyfile = this.$("#keyfile")[0].files[0];
+          {
+            text: _t("Enter"),
+            classes: "btn-primary",
+            click: async function () {
+              const password = this.$("#password").val();
+              const keyfile = this.$("#keyfile")[0].files[0];
 
-            if (!password && !keyfile) {
-              Dialog.alert(this, _t("Missing password"));
-              return;
-            }
-
-            if (options.confirm) {
-              const confirm = this.$("#confirm").val();
-
-              if (confirm !== password) {
-                Dialog.alert(this, _t("The passwords aren't matching"));
+              if (!password && !keyfile) {
+                Dialog.alert(this, _t("Missing password"));
                 return;
               }
-            }
 
-            dialog.close();
+              if (options.confirm) {
+                const confirm = this.$("#confirm").val();
 
-            let keyfile_content = null;
-            if (keyfile)
-              keyfile_content = fromBinary(await keyfile.text());
+                if (confirm !== password) {
+                  Dialog.alert(this, _t("The passwords aren't matching"));
+                  return;
+                }
+              }
 
-            resolve({
-              password: password,
-              keyfile: keyfile_content,
-            });
-          }},
-          {text: _t("Cancel"), click: function () {
-            dialog.close();
-            reject(_t("Cancelled"));
-          }},
+              dialog.close();
+
+              let keyfile_content = null;
+              if (keyfile) keyfile_content = fromBinary(await keyfile.text());
+
+              resolve({
+                password: password,
+                keyfile: keyfile_content,
+              });
+            },
+          },
+          {
+            text: _t("Cancel"),
+            click: function () {
+              dialog.close();
+              reject(_t("Cancelled"));
+            },
+          },
         ],
       });
 
@@ -236,7 +237,7 @@ odoo.define("vault.utils", function (require) {
    * @param {Object} options
    * @returns promise
    */
-  function generate_pass(title, options={}) {
+  function generate_pass(title, options = {}) {
     var self = this;
 
     const $content = $(qweb.render("vault.generate_pass", options));
@@ -250,17 +251,16 @@ odoo.define("vault.utils", function (require) {
 
     function gen_pass() {
       let characters = "";
-      if ($big.checked)
-        characters += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-      if ($small.checked)
-        characters += "abcdefghijklmnopqrstuvwxyz";
-      if ($digits.checked)
-        characters += "0123456789";
-      if ($special.checked)
-        characters += "!?$%&/()[]{}|<>,;.:-_#+*\\";
+      if ($big.checked) characters += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      if ($small.checked) characters += "abcdefghijklmnopqrstuvwxyz";
+      if ($digits.checked) characters += "0123456789";
+      if ($special.checked) characters += "!?$%&/()[]{}|<>,;.:-_#+*\\";
 
       if (characters)
-        $password.innerHTML = password = generate_secret($length.value, characters);
+        $password.innerHTML = password = generate_secret(
+          $length.value,
+          characters
+        );
     }
 
     $length.onchange = $big.onchange = $small.onchange = $digits.onchange = $special.onchange = gen_pass;
@@ -272,17 +272,23 @@ odoo.define("vault.utils", function (require) {
         title: title,
         $content: $content,
         buttons: [
-          {text: _t("Enter"), classes: "btn-primary", click: async function () {
-            if (!password)
-              throw new Error(_t("Missing password"))
+          {
+            text: _t("Enter"),
+            classes: "btn-primary",
+            click: async function () {
+              if (!password) throw new Error(_t("Missing password"));
 
-            dialog.close();
-            resolve(password);
-          }},
-          {text: _t("Cancel"), click: function () {
-            dialog.close();
-            reject(_t("Cancelled"));
-          }},
+              dialog.close();
+              resolve(password);
+            },
+          },
+          {
+            text: _t("Cancel"),
+            click: function () {
+              dialog.close();
+              reject(_t("Cancelled"));
+            },
+          },
         ],
       });
 
@@ -305,7 +311,7 @@ odoo.define("vault.utils", function (require) {
       enc.encode(data),
       "PBKDF2",
       false,
-      ["deriveBits", "deriveKey"],
+      ["deriveBits", "deriveKey"]
     );
 
     return await CryptoAPI.deriveKey(
@@ -318,7 +324,7 @@ odoo.define("vault.utils", function (require) {
       material,
       Symmetric,
       false,
-      ["wrapKey", "unwrapKey", "encrypt", "decrypt"],
+      ["wrapKey", "unwrapKey", "encrypt", "decrypt"]
     );
   }
 
@@ -335,9 +341,9 @@ odoo.define("vault.utils", function (require) {
     const enc = new TextEncoder();
     return toBase64(
       await CryptoAPI.encrypt(
-        {name: AsymmetricName},
+        { name: AsymmetricName },
         public_key,
-        enc.encode(data),
+        enc.encode(data)
       )
     );
   }
@@ -355,10 +361,10 @@ odoo.define("vault.utils", function (require) {
     const dec = new TextDecoder();
     return dec.decode(
       await CryptoAPI.decrypt(
-        {name: AsymmetricName},
+        { name: AsymmetricName },
         private_key,
-        fromBase64(crypted),
-      ),
+        fromBase64(crypted)
+      )
     );
   }
 
@@ -377,9 +383,9 @@ odoo.define("vault.utils", function (require) {
     const enc = new TextEncoder();
     return toBase64(
       await CryptoAPI.encrypt(
-        {name: SymmetricName, iv: fromBase64(iv), tagLength: 128},
+        { name: SymmetricName, iv: fromBase64(iv), tagLength: 128 },
         key,
-        enc.encode(hash.slice(0, HashLength) + data),
+        enc.encode(hash.slice(0, HashLength) + data)
       )
     );
   }
@@ -399,9 +405,9 @@ odoo.define("vault.utils", function (require) {
       const dec = new TextDecoder();
       const message = dec.decode(
         await CryptoAPI.decrypt(
-          {name: SymmetricName, iv: fromBase64(iv), tagLength: 128},
+          { name: SymmetricName, iv: fromBase64(iv), tagLength: 128 },
           key,
-          fromBase64(crypted),
+          fromBase64(crypted)
         )
       );
 
@@ -428,7 +434,11 @@ odoo.define("vault.utils", function (require) {
    */
   async function load_public_key(public_key) {
     return await CryptoAPI.importKey(
-      "spki", fromBase64(public_key), Asymmetric, true, ["wrapKey", "encrypt"],
+      "spki",
+      fromBase64(public_key),
+      Asymmetric,
+      true,
+      ["wrapKey", "encrypt"]
     );
   }
 
@@ -445,10 +455,10 @@ odoo.define("vault.utils", function (require) {
       "pkcs8",
       fromBase64(private_key),
       key,
-      {name: SymmetricName, iv: fromBase64(iv), tagLength: 128},
+      { name: SymmetricName, iv: fromBase64(iv), tagLength: 128 },
       Asymmetric,
       true,
-      ["unwrapKey", "decrypt"],
+      ["unwrapKey", "decrypt"]
     );
   }
 
@@ -471,12 +481,13 @@ odoo.define("vault.utils", function (require) {
    * @returns the public key as CryptoKey
    */
   async function export_private_key(private_key, key, iv) {
-    return toBase64(await CryptoAPI.wrapKey(
-      "pkcs8",
-      private_key,
-      key,
-      {name: SymmetricName, iv: iv, tagLength: 128},
-    ));
+    return toBase64(
+      await CryptoAPI.wrapKey("pkcs8", private_key, key, {
+        name: SymmetricName,
+        iv: iv,
+        tagLength: 128,
+      })
+    );
   }
 
   /**
@@ -487,7 +498,9 @@ odoo.define("vault.utils", function (require) {
    * @returns wrapped master key
    */
   async function wrap(key, public_key) {
-    return toBase64(await CryptoAPI.wrapKey("raw", key, public_key, Asymmetric));
+    return toBase64(
+      await CryptoAPI.wrapKey("raw", key, public_key, Asymmetric)
+    );
   }
 
   /**
@@ -499,8 +512,13 @@ odoo.define("vault.utils", function (require) {
    */
   async function unwrap(key, private_key) {
     return await CryptoAPI.unwrapKey(
-      "raw", fromBase64(key), private_key, Asymmetric, Symmetric,
-      true, ["encrypt", "decrypt"],
+      "raw",
+      fromBase64(key),
+      private_key,
+      Asymmetric,
+      Symmetric,
+      true,
+      ["encrypt", "decrypt"]
     );
   }
 
@@ -511,7 +529,7 @@ odoo.define("vault.utils", function (require) {
    * @returns capitalized string
    */
   function capitalize(s) {
-    return s.toLowerCase().replace(/\b\w/g, function(c) {
+    return s.toLowerCase().replace(/\b\w/g, function (c) {
       return c.toUpperCase();
     });
   }

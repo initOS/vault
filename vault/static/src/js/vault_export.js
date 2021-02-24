@@ -4,7 +4,7 @@
 odoo.define("vault.export", function (require) {
   "use strict";
 
-  var core = require('web.core');
+  var core = require("web.core");
   var mixins = require("web.mixins");
   var utils = require("vault.utils");
 
@@ -90,8 +90,10 @@ odoo.define("vault.export", function (require) {
      */
     _export_json: async function (master_key, data) {
       // Get the password for the exported file from the user
-      const askpass = await utils.askpass(_t("Please enter the password for the database"));
-      let password = (askpass.password || '');
+      const askpass = await utils.askpass(
+        _t("Please enter the password for the database")
+      );
+      let password = askpass.password || "";
       if (askpass.keyfile)
         password += await utils.digest(utils.toBinary(askpass.keyfile));
 
@@ -101,13 +103,16 @@ odoo.define("vault.export", function (require) {
       const key = await utils.derive_key(password, salt, iterations);
 
       // Unwrap the master key and decrypt the entries
-      const content = await this._export_json_data(master_key, JSON.parse(data));
+      const content = await this._export_json_data(
+        master_key,
+        JSON.parse(data)
+      );
       return {
-        "type": "encrypted",
-        "iv": iv,
-        "salt": utils.toBase64(salt),
-        "data": await utils.sym_encrypt(key, content, iv),
-        "iterations": iterations,
+        type: "encrypted",
+        iv: iv,
+        salt: utils.toBase64(salt),
+        data: await utils.sym_encrypt(key, content, iv),
+        iterations: iterations,
       };
     },
 

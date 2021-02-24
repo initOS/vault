@@ -10,17 +10,19 @@ odoo.define("vault.UserMenu", function (require) {
     _onMenuKeys: function () {
       var self = this;
       var session = this.getSession();
-      this.trigger_up('clear_uncommitted_changes', {
+      this.trigger_up("clear_uncommitted_changes", {
         callback: function () {
-          self._rpc({
-            model: "res.users",
-            method: "action_get_vault"
-          }).then(function (result) {
-            result.res_id = session.uid;
-            self.do_action(result);
-          });
+          self
+            ._rpc({
+              model: "res.users",
+              method: "action_get_vault",
+            })
+            .then(function (result) {
+              result.res_id = session.uid;
+              self.do_action(result);
+            });
         },
       });
-    }
+    },
   });
 });

@@ -42,7 +42,10 @@ odoo.define("vault.share.fields", function (require) {
         views: [[false, "form"]],
         context: {
           default_secret: await utils.sym_encrypt(key, value, iv),
-          default_pin: await utils.asym_encrypt(public_key, pin + utils.generate_iv_base64()),
+          default_pin: await utils.asym_encrypt(
+            public_key,
+            pin + utils.generate_iv_base64()
+          ),
           default_iv: iv,
           default_salt: utils.toBase64(salt),
         },
