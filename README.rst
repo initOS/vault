@@ -1,3 +1,6 @@
+DEPRECATED Repository.
+Moved to https://github.com/OCA/server-auth
+
 Odoo Password Manager
 =====================
 
